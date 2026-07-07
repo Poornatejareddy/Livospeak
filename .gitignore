@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+env/
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environments & secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env.local
+
+# Python cache & uploads
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+temp_uploads/
+backend/temp_uploads/
+
+# OS/IDE files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
