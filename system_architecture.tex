@@ -1,0 +1,113 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{listings}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={LivoSpeak AI System Architecture and DPDP Compliance},
+    pdfpagemode=FullScreen,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{LivoSpeak AI MVP 1.0}
+\lhead{System Architecture \& DPDP Compliance}
+\rfoot{Page \thepage}
+\lfoot{Developed by K Poorna Teja Reddy}
+
+\titleformat{\section}
+{\normalfont\Large\bfseries}{\thesection}{1em}{}[{\titlerule[0.8pt]}]
+
+\title{\textbf{LivoSpeak AI \\ System Architecture \& DPDP Compliance Specification}}
+\author{\textbf{K Poorna Teja Reddy} \\ Lead Systems Architect}
+\date{July 7, 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+This document details the production-ready system architecture, machine learning inference pipeline, pronunciation scoring algorithms, and security guidelines for LivoSpeak AI. Additionally, it provides a comprehensive breakdown of the application's compliance strategy regarding India's Digital Personal Data Protection (DPDP) Act 2023.
+\end{abstract}
+
+\newpage
+
+\section{System Components \& Connectivity}
+LivoSpeak AI is built on a decoupled, async-first client-server model. This architecture guarantees sub-3-second speech analysis latency while protecting user privacy.
+
+\subsection{Architectural Components}
+\begin{enumerate}
+    \item \textbf{Frontend (Next.js 15 \& Tailwind CSS)}: Manages the browser microphone inputs, transposes recording outputs to temporary memory arrays, and displays interactive Speaking Dashboards, syllable coaches, and clickable transcripts.
+    \item \textbf{Backend (FastAPI)}: Acts as a high-speed asynchronous API gateway. Handles CORS, remuxes browser-specific audio containers, and manages calls to Groq's low-latency inference endpoints.
+    \item \textbf{Database (MongoDB Atlas)}: Persists text-based metrics, session analytics, and personalized practice histories using the asynchronous \texttt{Motor} driver.
+    \item \textbf{Transcoding Engine (FFmpeg)}: Standardizes multi-codec browser media formats into linear 16kHz mono PCM WAV streams.
+\end{enumerate}
+
+\subsection{Execution Sequence}
+The end-to-end processing pipeline runs sequentially as follows:
+\begin{align*}
+\text{User Recording} &\longrightarrow \text{Next.js Client} \longrightarrow \text{FastAPI POST /api/analyze} \\
+&\longrightarrow \text{FFmpeg WAV Transcoding} \longrightarrow \text{Groq Whisper STT} \\
+&\longrightarrow \text{Groq Llama 3.3 Evaluation} \longrightarrow \text{MongoDB Persistence}
+\end{align*}
+
+\section{Model Selection \& API Rationale}
+To support production scaling on lightweight infrastructure, LivoSpeak offloads resource-heavy deep learning workloads to the Groq LPU (Language Processing Unit) platform.
+
+\begin{table}[h]
+\centering
+\caption{Model Infrastructure Rationale}
+\begin{tabular}{lllp{6cm}}
+\toprule
+\textbf{Capability} & \textbf{Model/Service} & \textbf{Alternative} & \textbf{Core Rationale} \\
+\midrule
+\textbf{Speech-to-Text} & Groq Whisper Large V3 & Google STT, Local Whisper & Provides sub-second transcription alongside word-level confidence and timestamp metadata. \\
+\textbf{Speech Coaching} & Llama 3.3 70B & OpenAI GPT-4o, Local LLM & Superior instruction-following under strict JSON-schema conditions with zero user data retention. \\
+\textbf{Database Engine} & MongoDB Atlas & SQLite, PyMongo (Sync) & Prevent blocking the FastAPI async event loop during concurrent analytical historical requests. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+\section{Pronunciation Scoring \& Highlight Logic}
+Speech-to-text models automatically correct accented speech to decipher intent, yielding artificially high confidences. To counter this bias, LivoSpeak utilizes a \textbf{Hybrid STT-LLM Scoring Pipeline}:
+
+\begin{itemize}
+    \item \textbf{Pronunciation Accuracy}: Calculated using Whisper's raw token confidence. The scoring engine subtracts \textbf{6 points per mistake} identified by Llama 3.3's phonetic analysis.
+    \item \textbf{Speech Clarity}: Measures the percentage of high-confidence tokens. The engine applies a \textbf{5-point deduction} for each LLM-flagged articulation error.
+    \item \textbf{Fluency}: Evaluates speaking speed against the native English range (110--145 WPM). Points are deducted for speed deviation and for silent pauses exceeding 1.2 seconds (\textbf{-4 points per pause}).
+    \item \textbf{Visual Highlights}: Flagged mistakes are matched to the token array by stripping punctuation and running lowercase string matching. Interactive UI elements render matching tokens in red.
+\end{itemize}
+
+\section{India DPDP Act 2023 Compliance}
+LivoSpeak AI enforces strict data security measures designed to comply with India's Digital Personal Data Protection (DPDP) Act 2023:
+
+\begin{tcolorbox}[colback=red!5!white,colframe=red!75!black,title=DPDP Compliance Summary]
+\begin{itemize}
+    \item \textbf{Data Minimization}: Ephemeral audio files are processed in-memory or written to secure temp folders, then physically deleted (\texttt{os.remove}) inside a python \texttt{finally} block immediately after analysis. Total audio lifetime is $< 5$ seconds.
+    \item \textbf{Biometric Safety}: The platform never generates or stores vocal prints or biometric signatures.
+    \item \textbf{Consent}: User upload actions constitute explicit, affirmative consent.
+    \item \textbf{Right to Erasure}: A trash icon in the UI calls \texttt{DELETE /api/history/\{id\}}, removing the text analytics permanently from the database.
+\end{itemize}
+\end{tcolorbox}
+
+\section{Architectural Trade-offs \& Next Steps}
+\begin{itemize}
+    \item \textbf{Trade-off: Ephemeral Audio}: Because we delete audio files instantly for security compliance, users cannot play back past recordings. This simplifies database security and removes exposure vectors.
+    \item \textbf{Next Steps}: Next updates will introduce OAuth2 User Authentication, real-time phonetic acoustic mapping (via lightweight Wav2Vec2 alignment), and comparative speaking analytics progress graphs.
+\end{itemize}
+
+\end{document}
