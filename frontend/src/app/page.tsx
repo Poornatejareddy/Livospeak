@@ -25,7 +25,9 @@ import {
   ChevronRight,
   TrendingUp,
   FileCheck,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Plus
 } from "lucide-react";
 
 // API Endpoint configuration
@@ -991,6 +993,21 @@ export default function Home() {
         {/* STEP 4: Results Dashboard */}
         {step === "dashboard" && result && (
           <div className="space-y-8">
+            {/* Top Navigation Row */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-6">
+              <button 
+                onClick={() => setStep("landing")}
+                className="text-sm text-zinc-400 hover:text-zinc-200 flex items-center gap-2 transition font-medium"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to Dashboard Home
+              </button>
+              <button 
+                onClick={() => setStep("upload")}
+                className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-semibold text-white flex items-center gap-1.5 transition shadow-lg shadow-violet-600/20"
+              >
+                <Plus className="w-4 h-4" /> Analyze Another Speech
+              </button>
+            </div>
             
             {/* Top Row: Overall Score & Metadata Header */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

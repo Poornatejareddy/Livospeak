@@ -35,7 +35,7 @@ async def startup_event():
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # For local development we allow all. Can be restricted in production.
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
